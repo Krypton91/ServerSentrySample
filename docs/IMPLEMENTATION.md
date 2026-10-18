@@ -118,6 +118,50 @@ The website displays published snapshots, not a continuously updating live feed.
 Backend freshness/cache intervals and telemetry availability still apply. Empty
 servers/rankings and failed providers have explicit states and manual retry.
 
+### Server names appear, but readings are missing
+
+The configured server list and its telemetry are separate. A server name proves
+that the server is configured; it does not prove that population, queue or a
+restart schedule has been received. Check the browser Network response for
+`/api/shop/data/server-summary?provider=serversentry&serverId=YOUR_SERVER_ID`.
+Inspect `available`, `status`, `playerCount`, `maxPlayers`, `queueSize`,
+`nextRestartUtc` and `message` before changing the website's field mapping.
+
+For the updated ServerSentry provider:
+
+- Player count prefers a fresh agent `steamQuery.playerCount`, then a fresh
+  cached RCON count, then the fresh mod snapshot's player count. An empty mod
+  player list must not overwrite an available Steam query or RCON count.
+- Capacity comes from the agent runtime/configuration or query data. Queue comes
+  from a current successful Steam query, including a valid queue of zero.
+  Missing/failed/expired query data must not turn into an invented zero queue.
+- The next restart is the final command time from the server's enabled
+  ServerSentry restart schedule, including its timezone and countdown settings.
+  It is read independently of mod telemetry. Configure the schedule in the
+  backend; the website cannot infer an external provider's restart plan.
+- Restart metadata can exist without live readings. It does not make the server
+  online or provide a player count. Missing data stays null; it is not zero.
+
+Deploy the updated host for these mappings. The agent must also upload runtime
+and Steam query information: verify its version, connection and UDP query-port
+reachability. RCON fallback uses the existing background cache and needs working
+RCON configuration; website visits never trigger an RCON network request.
+
+The sample labels a null queue **Not reported** and a null restart **Not
+published**. Published times use the visitor's local timezone. These labels are
+different from zero players, zero queue, or a scheduled time. The response's
+`message` provides additional diagnostics when available.
+
+Keep the provider choice explicit in `src/config.ts`. `serversentry` lists local
+agent-managed servers; `cftools` lists configured CFTools grants and returns that
+provider's published readings. A single local server does not imply the CFTools
+server list is missing. Do not silently mix IDs or readings across providers.
+The current CFTools adapter publishes population, capacity and queue but does not
+publish a next restart time. Use the local provider with a configured ServerSentry
+restart schedule for that field; a provider switch does not create a schedule.
+The local QA fixture supports `/_fixture/mode?value=missing-data` to inspect
+missing fields without contacting a live backend.
+
 ## 6. Terms and Privacy inside your website
 
 Edit the Legal pages section in Landing settings and save. The section stays

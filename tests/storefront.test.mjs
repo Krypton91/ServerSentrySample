@@ -352,6 +352,48 @@ test("server loading coalesces reads, bounds fan-out and preserves partial failu
   assert.equal(app.requests.length, 13)
 })
 
+test("public server summaries retain real population, queue and scheduled restart without extra reads", async () => {
+  const app = environment()
+  app.bodies["/api/shop/data/servers"] = [{ name: "Example server", gameServerId: "server-1" }]
+  const published = {
+    available: true,
+    source: "local",
+    status: "online",
+    fetchedAtUtc: new Date().toISOString(),
+    expiresAtUtc: new Date(Date.now() + 60000).toISOString(),
+    playerCount: 24,
+    maxPlayers: 80,
+    queueSize: 3,
+    nextRestartUtc: new Date(Date.now() + 3600000).toISOString(),
+    metrics: [
+      { key: "player_count_source", label: "Player Count Source", value: "steam-query", displayValue: null },
+    ],
+  }
+  app.bodies["/api/shop/data/server-summary"] = published
+  const [server] = await app.community.loadServers()
+  assert.equal(server.snapshot.playerCount, 24)
+  assert.equal(server.snapshot.maxPlayers, 80)
+  assert.equal(server.snapshot.queueSize, 3)
+  assert.equal(server.snapshot.nextRestartUtc, published.nextRestartUtc)
+  assert.equal(app.community.aggregatePlayers([server]).players, 24)
+  assert.equal(app.requests.length, 2)
+  assert.equal(app.requests[1].url.searchParams.get("provider"), "serversentry")
+  assert.equal(app.requests[1].url.searchParams.get("serverId"), "server-1")
+
+  app.bodies["/api/shop/data/server-summary"] = {
+    ...published,
+    playerCount: null,
+    maxPlayers: null,
+    queueSize: null,
+    nextRestartUtc: null,
+  }
+  const [missing] = await app.community.loadServers(true)
+  assert.equal(missing.snapshot.playerCount, null)
+  assert.equal(missing.snapshot.queueSize, null)
+  assert.equal(missing.snapshot.nextRestartUtc, null)
+  assert.equal(app.community.aggregatePlayers([missing]).players, null)
+})
+
 test("unknown and expired snapshots cannot become online player totals", () => {
   const app = environment()
   const fresh = {

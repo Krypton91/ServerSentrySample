@@ -4,7 +4,7 @@ import { demoMode, siteConfig } from "./config"
 export type Metric = {
   key: string
   label: string
-  value: number | null
+  value: string | null
   displayValue: string | null
   unit?: string | null
 }
@@ -162,8 +162,8 @@ export async function loadPlayer(serverId: string, playerId: string): Promise<Pl
       name: "Demo player",
       message: null,
       metrics: [
-        { key: "kills", label: "Kills", value: 148, displayValue: "148" },
-        { key: "kdratio", label: "K/D ratio", value: 2.47, displayValue: "2.47" },
+        { key: "kills", label: "Kills", value: "148", displayValue: "148" },
+        { key: "kdratio", label: "K/D ratio", value: "2.47", displayValue: "2.47" },
       ],
     }
   const value = await getJson<PlayerDetails>(dataPath("player", { serverId, playerId }), { ttlMs: 30_000 })

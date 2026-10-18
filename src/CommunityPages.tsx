@@ -277,11 +277,11 @@ function ServerCard({ server, index, detailed }: { server: ServerView; index: nu
       <dl className="server-facts">
         <div>
           <dt>Queue</dt>
-          <dd>{snapshot?.queueSize ?? "—"}</dd>
+          <dd>{snapshot?.queueSize ?? "Not reported"}</dd>
         </div>
         <div>
           <dt>Next restart</dt>
-          <dd>{timeLabel(snapshot?.nextRestartUtc)}</dd>
+          <dd>{snapshot?.nextRestartUtc ? timeLabel(snapshot.nextRestartUtc) : "Not published"}</dd>
         </div>
         {detailed && (
           <>
