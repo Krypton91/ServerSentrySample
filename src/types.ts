@@ -15,6 +15,29 @@ export type ShopCheckoutField = {
   options: ShopCheckoutFieldOption[]
 }
 
+export type ShopProductVariantConfiguration = {
+  groupId?: string | null
+  groupName?: string | null
+  label?: string | null
+}
+
+// Public sibling summaries omit checkout fields. Use full catalog products for checkout.
+export type ShopProductVariant = Pick<
+  ShopProduct,
+  | "id"
+  | "slug"
+  | "name"
+  | "variantConfiguration"
+  | "purchaseType"
+  | "subscriptionInterval"
+  | "subscriptionIntervalCount"
+  | "subscriptionEntitlementDays"
+  | "priceAmountMinor"
+  | "currency"
+  | "isActive"
+  | "payPalPlanId"
+>
+
 export type ShopProduct = {
   id: string
   slug: string
@@ -35,7 +58,11 @@ export type ShopProduct = {
   sortOrder: number
   checkoutFields: ShopCheckoutField[]
   requiresDiscordLink?: boolean
+  discordDeliveryOptional?: boolean
   allowFriendPurchase?: boolean
+  variantConfiguration?: ShopProductVariantConfiguration | null
+  variants?: ShopProductVariant[] | null
+  payPalPlanId?: string | null
 }
 
 export type ShopCustomer = {
@@ -81,17 +108,14 @@ export type ShopLandingSettings = {
   shopProductsTitle?: string | null
   shopProductsSubtitle?: string | null
   footerText?: string | null
+  legalPagesJson?: string | null
 }
-
-export type StorefrontEndpoints = Record<string, string>
 
 export type StorefrontContext = {
   version: number
   route: "landing" | "shop"
   path: string
   apiBaseUrl: string
-  endpoints: StorefrontEndpoints
-  bridgeMessages: Record<string, string>
   landing: ShopLandingSettings
   customer: ShopCustomer | null
   access: ShopAccessStatus | null
@@ -106,4 +130,5 @@ export type CheckoutPayload = {
   provider?: string | null
   customerDetails?: Record<string, string>
   targetSteamId64?: string | null
+  countryCode?: string | null
 }
